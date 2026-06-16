@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BEANSIDED: 커피와 디저트</title>
+    <style>
+        @font-face {
+            font-family: 'Vitro_core';
+            src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-10-21@1.0/Vitro_core.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @import url('https://fastly.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
+
+        :root {
+            --zzz-yellow: #F07D53;
+            --zzz-black: #0b0b0b;
+            --zzz-gray: rgba(25, 25, 25, 0.7);
+            --zzz-blue: #eccd1b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--zzz-black); color: #e0e0e0;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            line-height: 1.6; overflow-x: hidden;
+            background-image: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.95)), url('dessert.png'); 
+            background-attachment: fixed; background-size: cover; background-position: center;
+        }
+
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: radial-gradient(#000 4px, transparent 0); background-size: 10px 10px;
+            -webkit-mask-image: linear-gradient(to right, black 0%, black 8%, rgba(0,0,0,0.3) 15%, transparent 25%, transparent 75%, rgba(0,0,0,0.3) 85%, black 92%, black 100%);
+            mask-image: linear-gradient(to right, black 0%, black 8%, rgba(0,0,0,0.3) 15%, transparent 25%, transparent 75%, rgba(0,0,0,0.3) 85%, black 92%, black 100%);
+            z-index: -1; pointer-events: none;
+        }
+
+        /* 애니메이션 효과 */
+        .reveal { 
+            opacity: 0; 
+            transform: translateY(60px); 
+            transition: all 0.8s cubic-bezier(0.17, 0.55, 0.55, 1); 
+            visibility: hidden; 
+        }
+        .reveal.active { opacity: 1; transform: translateY(0); visibility: visible; }
+
+        /* 상단 내비게이션 */
+        nav { 
+            background: rgba(0, 0, 0, 0.95); 
+            border-bottom: 1px solid var(--zzz-yellow); 
+            padding: 0 5%; 
+            height: 70px;
+            position: sticky; top: 0; z-index: 1000; 
+            backdrop-filter: blur(10px); 
+            display: flex; justify-content: flex-start; align-items: center; 
+        }
+        .logo { font-family: 'Vitro_core', sans-serif; font-size: 1.1rem; color: var(--zzz-yellow); border-left: 2px solid var(--zzz-yellow); padding-left: 12px; margin-right: 50px; flex-shrink: 0; }
+        .nav-menu { display: flex; list-style: none; gap: 30px; }
+        .nav-menu li a { color: #888; text-decoration: none; font-size: 0.8rem; transition: 0.3s; white-space: nowrap; }
+        .nav-menu li a:hover, .nav-menu li.active a { color: var(--zzz-yellow); text-shadow: 0 0 10px var(--zzz-yellow); }
+        
+        .container { max-width: 1000px; margin: 0 auto; padding: 40px 20px 60px; min-height: 80vh; }
+
+        /* 뒤로가기 버튼 스타일 */
+        .back-to-main {
+            display: inline-flex;
+            align-items: center;
+            text-decoration: none;
+            font-family: 'Vitro_core', sans-serif;
+            font-size: 0.8rem;
+            color: var(--zzz-yellow);
+            border: 1px solid var(--zzz-yellow);
+            padding: 8px 20px;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+            transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+            clip-path: polygon(6% 0%, 100% 0%, 94% 100%, 0% 100%);
+        }
+        .back-to-main:hover {
+            background: var(--zzz-yellow);
+            color: var(--zzz-black);
+            box-shadow: 0 0 20px rgba(240, 125, 83, 0.6);
+            transform: translateX(-6px);
+        }
+
+        .section-label { 
+            font-family: 'Vitro_core', sans-serif; font-size: 1.6rem; color: var(--zzz-yellow); margin: 40px 0 20px; display: flex; align-items: center; letter-spacing: 3px; 
+        }
+        .section-label::before { content: ""; width: 35px; height: 2px; background: var(--zzz-yellow); margin-right: 15px; }
+
+        /* 대형 슬라이더 스타일 */
+        .slider-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 20px;
+            gap: 20px;
+        }
+
+        .slider-window {
+            overflow: hidden;
+            width: 100%;
+            background: rgba(15, 15, 15, 0.9);
+            border: 1px solid var(--zzz-yellow);
+            clip-path: polygon(0% 0.5%, 100% 0%, 99.5% 99.5%, 0.5% 100%);
+            padding: 40px 0;
+            box-shadow: 20px 20px 0px rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(5px);
+        }
+
+        .slider-track {
+            display: flex;
+            transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+            width: 100%;
+        }
+
+        /* 세로형 배치를 위한 Flex 수직 정렬 */
+        .slide-item {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            flex-shrink: 0;
+            padding: 0 40px;
+            gap: 35px;
+        }
+
+        /* 상단에 크게 들어가는 와이드 이미지 프레임 상자 */
+        .slide-img-frame {
+            width: 100%;
+            aspect-ratio: 16 / 7; 
+            background: #000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            clip-path: polygon(1% 0%, 100% 2%, 99% 100%, 0% 97%);
+            
+            opacity: 0;
+            transform: translateY(-10px) scale(0.98);
+            transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        /* [수정 및 추가] 이미지 짤림 방지 핵심 코드 */
+        .slide-img-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* 프레임 비율에 맞게 이미지를 꽉 채우되 비율 유지 */
+            object-position: center; /* 이미지의 정중앙을 기준으로 정렬 */
+            display: block;
+        }
+
+        .slide-item.active .slide-img-frame {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* 하단 정보 영역을 2단 그리드로 배치 */
+        .slide-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            border-top: 1px dashed rgba(240, 125, 83, 0.3);
+            padding-top: 25px;
+        }
+
+        /* 타이틀 섹션 */
+        .slide-title-area {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .data-tag { 
+            display: inline-block; 
+            background: #fff; 
+            color: #000; 
+            font-size: 0.75rem; 
+            padding: 3px 12px; 
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .slide-info h3 { 
+            font-family: 'Vitro_core', sans-serif; 
+            font-size: 2.4rem;
+            color: var(--zzz-yellow);
+            letter-spacing: 1px;
+        }
+
+        .info-block {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label { 
+            color: var(--zzz-blue); 
+            text-transform: uppercase; 
+            font-size: 0.8rem; 
+            letter-spacing: 1px; 
+            font-family: 'Vitro_core', sans-serif;
+            margin-bottom: 8px;
+            border-left: 3px solid var(--zzz-blue);
+            padding-left: 8px;
+        }
+
+        .info-desc { 
+            font-size: 1.05rem; 
+            color: #ccc; 
+            word-break: keep-all;
+            line-height: 1.7;
+        }
+
+        /* 슬라이드 조작 화살표 버튼 */
+        .slide-arrow {
+            background: rgba(30, 30, 30, 0.9);
+            border: 1px solid var(--zzz-yellow);
+            color: var(--zzz-yellow);
+            font-size: 1.4rem;
+            width: 50px;
+            height: 80px; 
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+            flex-shrink: 0;
+            z-index: 10;
+        }
+        .prev-btn { clip-path: polygon(30% 0%, 100% 0%, 70% 100%, 0% 100%); }
+        .next-btn { clip-path: polygon(0% 0%, 70% 0%, 100% 100%, 30% 100%); }
+
+        .slide-arrow:hover {
+            background: var(--zzz-yellow);
+            color: var(--zzz-black);
+            box-shadow: 0 0 20px rgba(240, 125, 83, 0.6);
+        }
+        .prev-btn:hover { transform: translateX(-4px); }
+        .next-btn:hover { transform: translateX(4px); }
+
+        /* 슬라이드 동그라미 인디케이터 스타일 */
+        .slider-dots {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+            margin-bottom: 50px;
+        }
+        .dot {
+            width: 12px;
+            height: 12px;
+            border: 1px solid var(--zzz-yellow);
+            border-radius: 50%;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+        .dot.active {
+            background: var(--zzz-yellow);
+            box-shadow: 0 0 12px var(--zzz-yellow);
+            transform: scale(1.2);
+        }
+
+        /* 당 당김 지수 측정기 스타일 */
+        .meter-window {
+            background: rgba(15, 15, 15, 0.9);
+            border: 1px solid var(--zzz-yellow);
+            clip-path: polygon(0% 0%, 98% 0%, 100% 4%, 100% 100%, 2% 100%, 0% 96%);
+            padding: 40px;
+            margin-top: 20px;
+            box-shadow: 20px 20px 0px rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(5px);
+            text-align: center;
+        }
+        .meter-instruction {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+        }
+        .slider-wrapper {
+            max-width: 600px;
+            margin: 0 auto 25px;
+        }
+        #sugar-range {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            background: #222;
+            height: 8px;
+            border-radius: 4px;
+            outline: none;
+            border: 1px solid rgba(240, 125, 83, 0.3);
+        }
+        #sugar-range::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--zzz-yellow);
+            cursor: pointer;
+            box-shadow: 0 0 12px var(--zzz-yellow);
+            transition: 0.2s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+        #sugar-range::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
+        }
+        .range-labels {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 5px;
+            margin-top: 12px;
+            font-family: 'Vitro_core', sans-serif;
+            font-size: 0.8rem;
+            color: #555;
+        }
+        .range-labels span.highlight {
+            color: var(--zzz-yellow);
+            text-shadow: 0 0 8px var(--zzz-yellow);
+            transition: 0.3s;
+        }
+        .status-display {
+            margin: 30px 0;
+            font-size: 1.2rem;
+            color: #fff;
+            font-weight: 600;
+            min-height: 36px;
+        }
+        .result-display {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px dashed rgba(240, 125, 83, 0.4);
+            padding: 25px;
+            max-width: 600px;
+            margin: 0 auto;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.15s ease;
+        }
+        .result-title {
+            font-family: 'Vitro_core', sans-serif;
+            font-size: 1.8rem;
+            color: var(--zzz-blue);
+            margin: 8px 0 12px;
+            text-shadow: 0 0 8px rgba(236, 205, 27, 0.4);
+        }
+        .result-desc {
+            font-size: 1rem;
+            color: #ccc;
+            word-break: keep-all;
+        }
+
+        footer { padding: 60px; text-align: center; font-size: 0.7rem; color: #444; letter-spacing: 2px; }
+
+        /* 반응형 모바일 대책 */
+        @media (max-width: 768px) { 
+            nav { height: auto; padding: 15px; flex-direction: column; gap: 10px; }
+            .logo { margin-right: 0; }
+            .nav-menu { gap: 15px; flex-wrap: wrap; justify-content: center; }
+            
+            .slider-container { flex-direction: column; gap: 15px; }
+            .slider-window { padding: 20px 0; }
+            .slide-item { padding: 0 20px; gap: 20px; }
+            .slide-img-frame { aspect-ratio: 16 / 10; }
+            .slide-info { grid-template-columns: 1fr; gap: 20px; }
+            .slide-info h3 { font-size: 1.8rem; }
+            
+            .slide-arrow { width: 60px; height: 45px; }
+            .prev-btn { clip-path: polygon(20% 0%, 100% 0%, 80% 100%, 0% 100%); }
+            .next-btn { clip-path: polygon(0% 0%, 80% 0%, 100% 100%, 20% 100%); }
+
+            .slider-dots { margin-top: 20px; gap: 12px; margin-bottom: 40px; }
+            .dot { width: 10px; height: 10px; }
+
+            .meter-window { padding: 25px 20px; }
+            .status-display { font-size: 1.05rem; }
+            .result-title { font-size: 1.4rem; }
+            .result-desc { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">BEANSIDED</div>
+        <ul class="nav-menu">
+            <li><a href="index.html#section-intro">00.한국의 커피</a></li>
+            <li><a href="index.html#section-history">01.한국커피의 역사</a></li>
+            <li class="active"><a href="dessert.html">02.커피와 디저트</a></li>
+            <li><a href="index.html#section-test">03.나만의 커피?</a></li>
+        </ul>
+    </nav>
+    
+    <div class="container">
+        <a href="index.html" class="back-to-main">← RETURN TO MAIN</a>
+
+        <h2 class="section-label reveal">02-A. 커피와 디저트 페어링</h2>
+        
+        <div class="slider-container reveal">
+            <button class="slide-arrow prev-btn" onclick="moveSlide(-1)">◀</button>
+            
+            <div class="slider-window">
+                <div class="slider-track">
+                    
+                    <!-- 슬라이드 1: 약과와 아메리카노 -->
+                    <div class="slide-item active">
+                        <div class="slide-img-frame">
+                            <img src="yakgwa.png" alt="약과와 아메리카노">
+                        </div>
+                        <div class="slide-info">
+                            <div class="slide-title-area">
+                                <h3>약과와 아메리카노</h3>
+                                <span class="data-tag">Traditional Mix</span>
+                            </div>
+                            <div class="info-block">
+                                <div class="info-label">커피 이야기</div>
+                                <p class="info-desc">단짠의 정석 페어링. 쫀득한 약과의 묵직한 단맛과 깔끔한 아메리카노의 산미가 완벽한 조화를 이룹니다.</p>
+                            </div>
+                            <div class="info-block">
+                                <div class="info-label">궁극의 레시피</div>
+                                <p class="info-desc">시원한 아메리카노 + 찹쌀 약과</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 슬라이드 2: 에이스와 믹스 -->
+                    <div class="slide-item">
+                        <div class="slide-img-frame">
+                            <img src="ace.png" alt="에이스와 믹스">
+                        </div>
+                        <div class="slide-info">
+                            <div class="slide-title-area">
+                                <h3>에이스와 믹스</h3>
+                                <span class="data-tag">Soul Food</span>
+                            </div>
+                            <div class="info-block">
+                                <div class="info-label">커피 이야기</div>
+                                <p class="info-desc">추억의 '찍먹' 공식. 믹스커피의 달콤함을 촉촉하게 머금은 크래커가 입안에서 부드럽게 녹아내리는 한국인 소울 조합.</p>
+                            </div>
+                            <div class="info-block">
+                                <div class="info-label">궁극의 레시피</div>
+                                <p class="info-desc">뜨거운 믹스커피 + 에이스 과자</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 슬라이드 3: 인절미 라떼 -->
+                    <div class="slide-item">
+                        <div class="slide-img-frame">
+                            <img src="dduck.png" alt="인절미 라떼">
+                        </div>
+                        <div class="slide-info">
+                            <div class="slide-title-area">
+                                <h3>인절미 라떼</h3>
+                                <span class="data-tag">New Wave</span>
+                            </div>
+                            <div class="info-block">
+                                <div class="info-label">커피 이야기</div>
+                                <p class="info-desc">고소함의 끝판왕. 전통 콩가루의 풍미와 진한 에스프레소, 쫀득한 미니 인절미 떡이 만나 완성된 힙한 뉴트로 음료.</p>
+                            </div>
+                            <div class="info-block">
+                                <div class="info-label">궁극의 레시피</div>
+                                <p class="info-desc">스팀 밀크 + 에스프레소 + 고소한 볶은 콩가루 + 미니 인절미 떡 토핑</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 슬라이드 4: 달고나 라떼 -->
+                    <div class="slide-item">
+                        <div class="slide-img-frame">
+                            <img src="dalgona.png" alt="달고나 라떼">
+                        </div>
+                        <div class="slide-info">
+                            <div class="slide-title-area">
+                                <h3>달고나 라떼</h3>
+                                <span class="data-tag">Retro Classic</span>
+                            </div>
+                            <div class="info-block">
+                                <div class="info-label">커피 이야기</div>
+                                <p class="info-desc">바삭하고 달콤한 달고나가 부드러운 우유와 진한 에스프레소 속에서 서서히 녹아내리며 특유의 쌉싸름하고 깊은 풍미를 선사하는 추억의 음료.</p>
+                            </div>
+                            <div class="info-block">
+                                <div class="info-label">궁극의 레시피</div>
+                                <p class="info-desc">진한 에스프레소 샷 + 고소한 스팀 밀크 + 바삭한 수제 조각 달고나 가득</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 슬라이드 5: 흑임자 갸또와 콜드브루 -->
+                    <div class="slide-item">
+                        <div class="slide-img-frame">
+                            <img src="coldbrew.png" alt="흑임자 갸또와 콜드브루">
+                        </div>
+                        <div class="slide-info">
+                            <div class="slide-title-area">
+                                <h3>흑임자 갸또와 콜드브루</h3>
+                                <span class="data-tag">K-Dessert</span>
+                            </div>
+                            <div class="info-block">
+                                <div class="info-label">커피 이야기</div>
+                                <p class="info-desc">할매니얼 트렌드의 정점. 꾸덕하고 묵직한 흑임자 가나슈 갸또 케이크에 깔끔하고 청량한 콜드브루를 더해, 고소함은 살리고 입안은 산뜻하게 마무리하는 세련된 조합.</p>
+                            </div>
+                            <div class="info-block">
+                                <div class="info-label">궁극의 레시피</div>
+                                <p class="info-desc">장시간 차갑게 추출한 콜드브루 + 고소한 흑임자 크림을 올린 갸또 쇼콜라</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <button class="slide-arrow next-btn" onclick="moveSlide(1)">▶</button>
+        </div>
+
+        <!-- 박스 밑 동그라미 5개 배치 영역 -->
+        <div class="slider-dots reveal">
+            <span class="dot active" onclick="goToSlide(0)"></span>
+            <span class="dot" onclick="goToSlide(1)"></span>
+            <span class="dot" onclick="goToSlide(2)"></span>
+            <span class="dot" onclick="goToSlide(3)"></span>
+            <span class="dot" onclick="goToSlide(4)"></span>
+        </div>
+
+
+        <!-- 02-B. 당 당김 지수 측정기 위젯 -->
+        <h2 class="section-label reveal">02-B. 당 당김 지수 측정기</h2>
+        
+        <div class="meter-window reveal">
+            <p class="meter-instruction">현재 당신의 지친 정신 상태를 스캔하세요. 최적의 당도 시스템 페어링을 실시간 연산합니다.</p>
+            
+            <div class="slider-wrapper">
+                <input type="range" id="sugar-range" min="1" max="5" value="3" step="1">
+                <div class="range-labels" id="range-labels">
+                    <span>20%</span>
+                    <span>40%</span>
+                    <span class="highlight">60%</span>
+                    <span>80%</span>
+                    <span>100%</span>
+                </div>
+            </div>
+
+            <div class="status-display">
+                <div id="mood-text">"오후의 고비. 트렌디하고 고소한 변주가 필요한 상태"</div>
+            </div>
+
+            <div class="result-display">
+                <div class="info-label">RECOMMENDED SYSTEM PAIRING</div>
+                <div class="result-title" id="result-title">인절미 라떼</div>
+                <p class="result-desc" id="result-desc">스팀 밀크 + 에스프레소 + 고소한 볶은 콩가루 + 미니 인절미 떡 토핑</p>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>&copy; BEANSIDED PROJECT. ALL RIGHTS RESERVED.</footer>
+
+    <script>
+        // 스크롤 애니메이션 옵저버
+        const observerOptions = { threshold: 0.1, rootMargin: "0px 0px -50px 0px" };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('active');
+                else entry.target.classList.remove('active');
+            });
+        }, observerOptions);
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // 슬라이드 및 동그라미 제어 스크립트
+        let currentSlide = 0;
+        const totalSlides = 5; 
+        const track = document.querySelector('.slider-track');
+        const slides = document.querySelectorAll('.slide-item');
+        const dots = document.querySelectorAll('.dot');
+
+        function updateSlider() {
+            track.style.transform = `translateX(-${currentSlide * 100}%)`;
+            slides.forEach(slide => slide.classList.remove('active'));
+            slides[currentSlide].classList.add('active');
+            dots.forEach(dot => dot.classList.remove('active'));
+            dots[currentSlide].classList.add('active');
+        }
+
+        function moveSlide(direction) {
+            currentSlide += direction;
+            if (currentSlide < 0) currentSlide = totalSlides - 1;
+            else if (currentSlide >= totalSlides) currentSlide = 0;
+            updateSlider();
+        }
+
+        function goToSlide(index) {
+            currentSlide = index;
+            updateSlider();
+        }
+
+        // 측정기 위젯 데이터 및 이벤트 로직
+        const sugarData = {
+            1: {
+                mood: '"정신 상태 맑음. 깔끔하고 쌉싸름한 충전이 필요한 상태"',
+                title: "흑임자 갸또와 콜드브루",
+                desc: "장시간 차갑게 추출한 콜드브루 + 고소한 흑임자 크림을 올린 갸또 쇼콜라"
+            },
+            2: {
+                mood: '"약간의 피로. 익숙하고 따뜻한 위로가 필요한 상태"',
+                title: "에이스와 믹스",
+                desc: "뜨거운 믹스커피 + 에이스 과자"
+            },
+            3: {
+                mood: '"오후의 고비. 트렌디하고 고소한 변주가 필요한 상태"',
+                title: "인절미 라떼",
+                desc: "스팀 밀크 + 에스프레소 + 고소한 볶은 콩가루 + 미니 인절미 떡 토핑"
+            },
+            4: {
+                mood: '"스트레스 위험군. 확실한 단짠 조합이 시급한 상태"',
+                title: "약과와 아메리카노",
+                desc: "시원한 아메리카노 + 찹쌀 약과"
+            },
+            5: {
+                mood: '"영혼 탈탈 털림. 극강의 달콤함이 시급한 초비상 상태"',
+                title: "달고나 라떼",
+                desc: "진한 에스프레소 샷 + 고소한 스팀 밀크 + 바삭한 수제 조각 달고나 가득"
+            }
+        };
+
+        const rangeInput = document.getElementById('sugar-range');
+        const moodText = document.getElementById('mood-text');
+        const resultTitle = document.getElementById('result-title');
+        const resultDesc = document.getElementById('result-desc');
+        const labelSpans = document.querySelectorAll('#range-labels span');
+        const resultDisplay = document.querySelector('.result-display');
+
+        rangeInput.addEventListener('input', (e) => {
+            const val = e.target.value;
+            
+            moodText.innerText = sugarData[val].mood;
+            resultTitle.innerText = sugarData[val].title;
+            resultDesc.innerText = sugarData[val].desc;
+            
+            labelSpans.forEach((span, idx) => {
+                if (idx === (val - 1)) span.classList.add('highlight');
+                else span.classList.remove('highlight');
+            });
+
+            resultDisplay.style.opacity = '0.3';
+            setTimeout(() => { resultDisplay.style.opacity = '1'; }, 60);
+        });
+    </script>
+</body>
+</html>
